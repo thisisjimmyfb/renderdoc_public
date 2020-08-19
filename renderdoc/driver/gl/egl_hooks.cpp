@@ -224,6 +224,26 @@ HOOK_EXPORT EGLBoolean EGLAPIENTRY eglBindAPI_renderdoc_hooked(EGLenum api)
   return ret;
 }
 
+static void Test(EGLDisplay display, EGLContext ctx) {
+  RDCDEBUG("begin crash test...");
+
+  const size_t buffer_count = 16;
+  GLuint buffers[buffer_count];
+  GL.glGenBuffers(buffer_count, buffers);
+  RDCDEBUG("glGenBuffers(buffer_count, &buffers)");
+
+  EGL.MakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  RDCDEBUG("eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)");
+
+  GL.glDeleteBuffers(buffer_count, buffers);
+  RDCDEBUG("glDeleteBuffers(buffer_count, &buffers)");
+
+  EGL.MakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx);
+  RDCDEBUG("eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx)");
+
+  RDCDEBUG("crash test complete");
+}
+
 HOOK_EXPORT EGLContext EGLAPIENTRY eglCreateContext_renderdoc_hooked(EGLDisplay display,
                                                                      EGLConfig config,
                                                                      EGLContext shareContext,
@@ -343,6 +363,8 @@ HOOK_EXPORT EGLContext EGLAPIENTRY eglCreateContext_renderdoc_hooked(EGLDisplay 
     SCOPED_LOCK(glLock);
     eglhook.driver.CreateContext(data, shareContext, init, true, true);
   }
+
+  Test(display, ret);
 
   return ret;
 }
