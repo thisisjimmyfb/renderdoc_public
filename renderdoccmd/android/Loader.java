@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.view.WindowManager;
 import android.os.Environment;
 import android.content.Intent;
+import android.net.Uri;
 
 public class Loader extends android.app.NativeActivity
 {
@@ -49,7 +50,8 @@ public class Loader extends android.app.NativeActivity
 
                 // Popup a dialog if we haven't granted Android storage permissions.
                 if (!result) {
-                    Intent viewIntent = new Intent( "android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION"  /*android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION*/);
+                    Uri uri = Uri.parse("package:@RENDERDOC_ANDROID_PACKAGE_NAME@");
+                    Intent viewIntent = new Intent( "android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION"  /*android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION*/, uri);
                     startActivity(viewIntent);
                 }
             } catch(Exception e) { }
