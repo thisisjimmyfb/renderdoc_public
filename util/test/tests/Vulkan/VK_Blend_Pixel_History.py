@@ -63,7 +63,8 @@ class VK_Blend_Pixel_History(rdtest.TestCase):
         all_eid = self.find_action("All of the above in a single drawcall").next.eventId
 
         # Pixel inside of all of the triangles
-        x, y = 200, 150
+        vp = self.screen_crop_coords(tex)
+        x, y = int(0.5*vp[2]+vp[0]), int(0.5*vp[3]+vp[1])
         rdtest.log.print("Testing pixel {}, {}".format(x, y))
         modifs: List[rd.PixelModification] = self.controller.PixelHistory(tex, x, y, sub, rt.format.compType)
         self.check_modifs_consistent(modifs)
