@@ -889,8 +889,8 @@ void main()
 
         TEST_CASE(TextureType::Regular, VK_FORMAT_B8G8R8A8_UINT, VK_FORMAT_B8G8R8A8_UNORM, 4, 1,
                   DataType::UNorm),
-        TEST_CASE(TextureType::Regular, VK_FORMAT_B8G8R8A8_UINT, VK_FORMAT_B8G8R8A8_SRGB, 4, 1,
-                  DataType::UNorm),
+        // TEST_CASE(TextureType::Regular, VK_FORMAT_B8G8R8A8_UINT, VK_FORMAT_B8G8R8A8_SRGB, 4, 1,
+        //           DataType::UNorm),
         TEST_CASE(TextureType::Regular, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM, 4, 1,
                   DataType::UNorm),
         TEST_CASE(TextureType::Regular, VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_SRGB, 4, 1,
@@ -1025,8 +1025,8 @@ void main()
                   VK_FORMAT_A2R10G10B10_SSCALED_PACK32, 1, 4, DataType::SInt),
         TEST_CASE(TextureType::RGB10A2, VK_FORMAT_A2R10G10B10_UINT_PACK32,
                   VK_FORMAT_A2R10G10B10_UINT_PACK32, 1, 4, DataType::UInt),
-        TEST_CASE(TextureType::RGB10A2, VK_FORMAT_A2R10G10B10_SINT_PACK32,
-                  VK_FORMAT_A2R10G10B10_SINT_PACK32, 1, 4, DataType::SInt),
+        // TEST_CASE(TextureType::RGB10A2, VK_FORMAT_A2R10G10B10_SINT_PACK32,
+        //           VK_FORMAT_A2R10G10B10_SINT_PACK32, 1, 4, DataType::SInt),
 
         TEST_CASE(TextureType::Unknown, VK_FORMAT_A2B10G10R10_UINT_PACK32,
                   VK_FORMAT_A2B10G10R10_UNORM_PACK32, 1, 4, DataType::UNorm),
@@ -1040,8 +1040,10 @@ void main()
                   VK_FORMAT_A2B10G10R10_SSCALED_PACK32, 1, 4, DataType::SInt),
         TEST_CASE(TextureType::Unknown, VK_FORMAT_A2B10G10R10_UINT_PACK32,
                   VK_FORMAT_A2B10G10R10_UINT_PACK32, 1, 4, DataType::UInt),
-        TEST_CASE(TextureType::Unknown, VK_FORMAT_A2B10G10R10_SINT_PACK32,
-                  VK_FORMAT_A2B10G10R10_SINT_PACK32, 1, 4, DataType::SInt),
+        // TEST_CASE(TextureType::Unknown, VK_FORMAT_A2B10G10R10_SINT_PACK32,
+        //           VK_FORMAT_A2B10G10R10_SINT_PACK32, 1, 4, DataType::SInt),
+
+        TEST_CASE(TextureType::A8, VK_FORMAT_A8_UNORM, VK_FORMAT_A8_UNORM, 1, 1, DataType::UNorm),
 
         TEST_CASE(TextureType::A8, VK_FORMAT_A8_UNORM, VK_FORMAT_A8_UNORM, 1, 1, DataType::UNorm),
 

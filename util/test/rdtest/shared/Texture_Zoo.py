@@ -660,7 +660,7 @@ class Texture_Zoo():
 
         rdtest.log.begin_section("Local test")
         try:
-            # First check with the local controller
+            # First check with the local or ADB controller
             self.check_capture_with_controller('')
         except rdtest.TestFailureException as ex:
             rdtest.log.error(str(ex))
@@ -671,53 +671,54 @@ class Texture_Zoo():
         self.controller.Shutdown()
         self.controller = None
 
-        # Launch a remote server
-        rdtest.launch_remote_server()
+        if rdtest.util.get_remote_server() is None:
+            # Launch a remote server
+            rdtest.launch_remote_server()
 
-        # Wait for it to start
-        time.sleep(0.5)
-
-        ret: Tuple[rd.ResultDetails, rd.RemoteServer] = rd.CreateRemoteServerConnection('localhost')
-        result, remote = ret
-
-        if result != rd.ResultCode.Succeeded:
-            time.sleep(2)
+            # Wait for it to start
+            time.sleep(0.5)
 
             ret: Tuple[rd.ResultDetails, rd.RemoteServer] = rd.CreateRemoteServerConnection('localhost')
             result, remote = ret
 
-        if result != rd.ResultCode.Succeeded:
-            raise rdtest.TestFailureException("Couldn't connect to remote server: {}".format(str(result)))
+            if result != rd.ResultCode.Succeeded:
+                time.sleep(2)
 
-        proxies = remote.LocalProxies()
+                ret: Tuple[rd.ResultDetails, rd.RemoteServer] = rd.CreateRemoteServerConnection('localhost')
+                result, remote = ret
 
-        try:
-            # Try D3D11 and GL as proxies, D3D12/Vulkan technically don't have proxying implemented even though they
-            # will be listed in proxies
-            for api in ['D3D11', 'OpenGL']:
-                if api not in proxies:
-                    continue
+            if result != rd.ResultCode.Succeeded:
+                raise rdtest.TestFailureException("Couldn't connect to remote server: {}".format(str(result)))
 
-                rdtest.log.begin_section("{} proxy".format(api))
-                try:
-                    ret: Tuple[rd.ResultDetails, rd.ReplayController] = remote.OpenCapture(proxies.index(api),
-                                                                                        capture_filename,
-                                                                                        rd.ReplayOptions(), None)
-                    result, self.controller = ret
+            proxies = remote.LocalProxies()
 
-                    # Now check with the proxy
-                    self.check_capture_with_controller(api)
-                except ValueError:
-                    continue
-                except rdtest.TestFailureException as ex:
-                    rdtest.log.error(str(ex))
-                    failed = True
-                finally:
-                    rdtest.log.end_section("{} proxy".format(api))
-                    remote.CloseCapture(self.controller)
-                    self.controller = None
-        finally:
-            remote.ShutdownServerAndConnection()
+            try:
+                # Try D3D11 and GL as proxies, D3D12/Vulkan technically don't have proxying implemented even though they
+                # will be listed in proxies
+                for api in ['D3D11', 'OpenGL']:
+                    if api not in proxies:
+                        continue
+
+                    rdtest.log.begin_section("{} proxy".format(api))
+                    try:
+                        ret: Tuple[rd.ResultDetails, rd.ReplayController] = remote.OpenCapture(proxies.index(api),
+                                                                                            capture_filename,
+                                                                                            rd.ReplayOptions(), None)
+                        result, self.controller = ret
+
+                        # Now check with the proxy
+                        self.check_capture_with_controller(api)
+                    except ValueError:
+                        continue
+                    except rdtest.TestFailureException as ex:
+                        rdtest.log.error(str(ex))
+                        failed = True
+                    finally:
+                        rdtest.log.end_section("{} proxy".format(api))
+                        remote.CloseCapture(self.controller)
+                        self.controller = None
+            finally:
+                remote.ShutdownServerAndConnection()
 
         # Now iterate over all the temp images saved out, load them as captures, and check the texture.
         dir_path = rdtest.get_tmp_path('')
