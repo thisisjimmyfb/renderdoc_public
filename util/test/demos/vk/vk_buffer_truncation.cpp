@@ -31,7 +31,7 @@ RD_TEST(VK_Buffer_Truncation, VulkanGraphicsTest)
       "vertex/index buffers truncated by size.";
 
   const std::string vertex = R"EOSHADER(
-#version 460 core
+#version 450 core
 
 layout(location = 0) in vec3 POSITION;
 layout(location = 1) in vec4 COLOR;
@@ -48,7 +48,7 @@ void main()
 )EOSHADER";
 
   const std::string pixel = R"EOSHADER(
-#version 460 core
+#version 450 core
 
 layout(location = 0, index = 0) out vec4 Color;
 
@@ -125,17 +125,25 @@ void main()
 
     VkPipeline pipe = createGraphicsPipeline(pipeCreateInfo);
 
-    AllocatedBuffer vb(this,
-                       vkh::BufferCreateInfo(sizeof(OffsetTri), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                                                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-                       VmaAllocationCreateInfo({0, VMA_MEMORY_USAGE_CPU_TO_GPU}));
+    VkBufferUsageFlags2CreateInfo vbUsage = {
+        VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO,
+        NULL,
+        VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_TRANSFER_DST_BIT_KHR,
+    };
+    vkh::BufferCreateInfo vbCreateInfo(sizeof(OffsetTri), 0);
+    vbCreateInfo.pNext = &vbUsage;
+    AllocatedBuffer vb(this, vbCreateInfo, VmaAllocationCreateInfo({0, VMA_MEMORY_USAGE_CPU_TO_GPU}));
 
     vb.upload(OffsetTri);
 
-    AllocatedBuffer ib(this,
-                       vkh::BufferCreateInfo(sizeof(indices), VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
-                                                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-                       VmaAllocationCreateInfo({0, VMA_MEMORY_USAGE_CPU_TO_GPU}));
+    VkBufferUsageFlags2CreateInfo ibUsage = {
+        VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO,
+        NULL,
+        VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_TRANSFER_DST_BIT_KHR,
+    };
+    vkh::BufferCreateInfo ibCreateInfo(sizeof(indices), 0);
+    ibCreateInfo.pNext = &ibUsage;
+    AllocatedBuffer ib(this, ibCreateInfo, VmaAllocationCreateInfo({0, VMA_MEMORY_USAGE_CPU_TO_GPU}));
 
     ib.upload(indices);
 
@@ -182,7 +190,8 @@ void main()
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
       vkCmdSetViewport(cmd, 0, 1, &mainWindow->viewport);
       vkCmdSetScissor(cmd, 0, 1, &mainWindow->scissor);
-      vkCmdBindIndexBuffer(cmd, ib.buffer, sizeof(uint16_t) * 3, VK_INDEX_TYPE_UINT16);
+      vkCmdBindIndexBuffer2KHR(cmd, ib.buffer, sizeof(uint16_t) * 3, sizeof(uint16_t) * 5,
+                               VK_INDEX_TYPE_UINT16);
       vkh::cmdBindVertexBuffers(cmd, 0, {vb.buffer}, {sizeof(DefaultA2V) * 3});
       vkh::cmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, {descset}, {});
       vkCmdDrawIndexed(cmd, 6, 1, 0, 0, 0);
