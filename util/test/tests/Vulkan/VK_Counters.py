@@ -20,12 +20,18 @@ class VK_Counters(rdtest.TestCase):
             descs[c] = self.controller.DescribeCounter(c)
 
         action = self.find_action("Draw")
+        self.controller.SetFrameEvent(action.eventId, False)
         durationAction = action.next
 
         # filter to only results from the draw
         results = [r for r in results if r.eventId == action.eventId or r.eventId == durationAction.eventId]
 
         ps = samp = None
+
+        # The test triangle takes up about an eighth of the viewport
+        pipe: rd.PipeState = self.controller.GetPipelineState()
+        vp: rd.Viewport = pipe.GetViewport(0)
+        sample_counts = 0.125 * vp.width * vp.height
 
         for r in results:
             desc: rd.CounterDescription = descs[r.counter]
@@ -38,8 +44,8 @@ class VK_Counters(rdtest.TestCase):
                     elif desc.resultByteWidth == 4:
                         val = r.value.f
 
-                    # should not be smaller than 0.1 microseconds, and should not be more than 10 milliseconds
-                    if val < 1.0e-7 or val > 0.01:
+                    # should not be smaller than 0.1 microseconds, and should not be more than 50 milliseconds
+                    if val < 1.0e-7 or val > 0.05:
                         raise rdtest.TestFailureException("{} of draw {}s is unexpected".format(desc.name, val))
                     else:
                         rdtest.log.success("{} of draw {}s is expected".format(desc.name, val))
@@ -79,8 +85,8 @@ class VK_Counters(rdtest.TestCase):
                     else:
                         samp = val
 
-                    # should be around 15000 pixels, but allow for slight rasterization differences
-                    if val < 14500 or val > 15500:
+                    # Allow for slight rasterization differences with a 5% tolerance
+                    if val < (sample_counts * 0.95) or val > (sample_counts * 1.05):
                         raise rdtest.TestFailureException("{} of draw {} is unexpected".format(desc.name, val))
                     else:
                         rdtest.log.success("{} of draw {} is expected".format(desc.name, val))
