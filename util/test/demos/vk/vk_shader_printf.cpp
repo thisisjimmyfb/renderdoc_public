@@ -62,26 +62,6 @@ void main()
 
 )EOSHADER";
 
-  const std::string pixel = R"EOSHADER(
-
-layout(location = 0) in v2f vertIn;
-
-layout(location = 0, index = 0) out vec4 Color;
-
-void main()
-{
-  if (gl_FragCoord.x >= 200 && gl_FragCoord.x <= 202 &&
-      gl_FragCoord.y >= 150 && gl_FragCoord.y <= 152)
-  {
-    debugPrintfEXT("pixel:%d,%d,%04.2v2f,%d", int(gl_FragCoord.x), int(gl_FragCoord.y), gl_FragCoord.xy, int(gl_FragCoord.x) == 201);
-    debugPrintfEXT("Invalid printf string %y");
-  }
-
-  Color = vec4(0, 1, 0, 1);
-}
-
-)EOSHADER";
-
   const std::string comp = R"EOSHADER(
 
 layout(binding = 0, std430) buffer outbuftype {
@@ -99,6 +79,43 @@ void main()
 }
 
 )EOSHADER";
+
+  std::string create_pixel_shader(int width, int height)
+  {
+    std::string pixel = R"EOSHADER(
+
+layout(location = 0) in v2f vertIn;
+
+layout(location = 0, index = 0) out vec4 Color;
+
+const int midpoint_x = {1};
+const int midpoint_y = {2};
+
+void main()
+{
+  if (gl_FragCoord.x >= midpoint_x && gl_FragCoord.x <= (midpoint_x+2) &&
+      gl_FragCoord.y >= midpoint_y && gl_FragCoord.y <= (midpoint_y+2))
+  {
+    debugPrintfEXT("pixel:%d,%d,%04.2v2f,%d",
+                   int(gl_FragCoord.x), int(gl_FragCoord.y),
+                   gl_FragCoord.xy,
+                   int(gl_FragCoord.x) == (midpoint_x+1));
+    debugPrintfEXT("Invalid printf string %y");
+  }
+
+  Color = vec4(0, 1, 0, 1);
+}
+
+)EOSHADER";
+
+    auto pos = pixel.find("{1}");
+    pixel.replace(pos, 3, std::to_string(width));
+
+    pos = pixel.find("{2}");
+    pixel.replace(pos, 3, std::to_string(height));
+
+    return pixel;
+  }
 
   void Prepare(int argc, char **argv)
   {
@@ -131,6 +148,8 @@ void main()
         vkh::vertexAttr(2, 0, DefaultA2V, uv),
     };
 
+    const auto pixel = create_pixel_shader(static_cast<int>(mainWindow->viewport.width / 2),
+                                           static_cast<int>(mainWindow->viewport.height / 2));
     pipeCreateInfo.stages = {
         CompileShaderModule(common + vertex, ShaderLang::glsl, ShaderStage::vert, "main"),
         CompileShaderModule(common + pixel, ShaderLang::glsl, ShaderStage::frag, "main"),
