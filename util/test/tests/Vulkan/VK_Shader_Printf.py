@@ -28,6 +28,9 @@ class VK_Shader_Printf(rdtest.TestCase):
         self.check(len(vkpipe.shaderMessages) == 8, "Expected 8 messages for draw, got {}"
                    .format(len(vkpipe.shaderMessages)))
 
+        vp = self.screen_crop_coords()
+        midpoint_x = int(0.5*vp[2]+vp[0])
+        midpoint_y = int(0.5*vp[3]+vp[1])
         for msg in vkpipe.shaderMessages:
             if 'Invalid' in msg.message:
                 self.check(msg.message == "Unrecognised % formatter in \"Invalid printf string %y\"",
@@ -38,8 +41,8 @@ class VK_Shader_Printf(rdtest.TestCase):
                 self.check(msg.message == expected,
                            "Message is wrong. Got '{}' expected '{}'".format(msg.message, expected))
 
-                self.check(msg.location.pixel.x in [200, 201, 202])
-                self.check(msg.location.pixel.y in [150, 151, 152])
+                self.check(msg.location.pixel.x in [midpoint_x, midpoint_x+1, midpoint_x+2])
+                self.check(msg.location.pixel.y in [midpoint_y, midpoint_y+1, midpoint_y+2])
 
         action = self.find_action("CmdDispatch")
 
