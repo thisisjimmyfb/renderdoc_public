@@ -423,3 +423,19 @@ def path_exists(path: str, timeout=10):
     
     return get_remote_server().path_exists(path)
 
+
+def transform_coord_from_vk_ndc(x, y, x_max_new, y_max_new) -> Tuple[int,int]:
+    """
+    Transform a 2D coordinate from Vulkan's NDC space to a given resolution
+    """
+    x_min_old = y_min_old = -1
+    x_max_old = y_max_old = 1
+    x_min_new = y_min_new = 0
+
+    x_norm = (x - x_min_old) / (x_max_old - x_min_old)
+    y_norm = (y - y_min_old) / (y_max_old - y_min_old)
+
+    x_new = x_norm * (x_max_new - x_min_new) + x_min_new
+    y_new = y_norm * (y_max_new - y_min_new) + y_min_new
+
+    return round(x_new), round(y_new)
