@@ -30,6 +30,14 @@ RD_TEST(VK_Leak_Check, VulkanGraphicsTest)
       "Checks that we don't have memory leaks by exiting if memory usage gets too high, so we can "
       "wait and capture a late frame to check for leaks.";
 
+#if defined(ANDROID)
+  // Android requires a much larger limit as the backbuffer is fullscreen
+  static constexpr uint64_t MemoryLimit = 1500 * 1000 * 1000;    // 1.5GB
+#else
+  // Overkill but we're only after the big leaks
+  static constexpr uint64_t MemoryLimit = 750 * 1000 * 1000;    // 750MB
+#endif
+
   int main()
   {
     // initialise, create window, create context, etc
@@ -72,8 +80,7 @@ RD_TEST(VK_Leak_Check, VulkanGraphicsTest)
 
     while(Running())
     {
-      // allow a generous 750MB, we're really only after catching big leaks here
-      if(GetMemoryUsage() > 750 * 1000 * 1000)
+      if(GetMemoryUsage() > MemoryLimit)
       {
         TEST_ERROR("Memory usage of %llu is too high!", GetMemoryUsage());
         break;
