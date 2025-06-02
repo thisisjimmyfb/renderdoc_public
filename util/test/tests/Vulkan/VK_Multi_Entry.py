@@ -1,5 +1,6 @@
 import renderdoc as rd
 import rdtest
+import math
 
 
 class VK_Multi_Entry(rdtest.TestCase):
@@ -82,7 +83,13 @@ class VK_Multi_Entry(rdtest.TestCase):
 
         self.controller.FreeTrace(trace)
 
-        history = self.controller.PixelHistory(pipe.GetOutputTargets()[0].resource, 200, 150, rd.Subresource(0, 0, 0),
+        vp = self.screen_crop_coords()
+        midpoint_x = int(0.5*vp[2]+vp[0])
+        midpoint_y = int(0.5*vp[3]+vp[1])
+        history = self.controller.PixelHistory(pipe.GetOutputTargets()[0].resource,
+                                               midpoint_x,
+                                               midpoint_y,
+                                               rd.Subresource(0, 0, 0),
                                                rd.CompType.Typeless)
 
         # should be a clear then a draw
@@ -100,8 +107,8 @@ class VK_Multi_Entry(rdtest.TestCase):
         inputs = rd.DebugPixelInputs()
         inputs.sample = 0
         inputs.primitive = 0
-        trace = self.controller.DebugPixel(200, 150, inputs)
-
+        trace = self.controller.DebugPixel(midpoint_x, midpoint_y, inputs)
+    
         refl: rd.ShaderReflection = pipe.GetShaderReflection(rd.ShaderStage.Pixel)
 
         self.check(len(refl.readOnlyResources) == 1)
@@ -142,7 +149,12 @@ class VK_Multi_Entry(rdtest.TestCase):
 
         overlay_id = out.GetDebugOverlayTexID()
 
-        self.check_pixel_value(overlay_id, 200, 150, [14992.0, 14992.0, 14992.0, 1.0])
+        # If the target device has a viewport that is more than 4 times the 'standard' size, the
+        # result value will overflow as it is only FP16
+        if int(vp[2] * vp[3]) < (800 * 600):
+            self.check_pixel_value(overlay_id, midpoint_x, midpoint_y, [14992.0, 14992.0, 14992.0, 1.0])
+        else:
+            self.check_pixel_value(overlay_id, midpoint_x, midpoint_y, [math.inf, math.inf, math.inf, 1.0])
 
         rdtest.log.success("Triangle size overlay gave correct output")
 
