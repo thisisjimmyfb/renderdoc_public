@@ -98,6 +98,9 @@ void OpenGLGraphicsTest::Prepare(int argc, char **argv)
     prepared = true;
 
     libGL = dlopen("libGL.so", RTLD_GLOBAL | RTLD_NOW);
+
+    if(!libGL)
+      libGL = dlopen("libGL.so.1", RTLD_GLOBAL | RTLD_NOW);
   }
 
   if(!libGL)
@@ -149,8 +152,17 @@ bool OpenGLGraphicsTest::Init()
 
   if(GLX_EXT_swap_control)
   {
-    X11Window *x11win = (X11Window *)mainWindow;
-    glXSwapIntervalEXT(x11win->xlib.display, x11win->xlib.window, vsync ? 1 : 0);
+    const std::string result = glXQueryExtensionsString(dpy, DefaultScreen(dpy));
+    const size_t pos = result.find("GLX_EXT_swap_control");
+    if(pos == std::string::npos)
+    {
+      TEST_WARN("GLX_EXT_swap_control not available, VSync disabled");
+    }
+    else
+    {
+      X11Window *x11win = (X11Window *)mainWindow;
+      glXSwapIntervalEXT(x11win->xlib.display, x11win->xlib.window, vsync ? 1 : 0);
+    }
   }
 
   PostInit();

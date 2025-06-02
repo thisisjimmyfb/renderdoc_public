@@ -469,14 +469,19 @@ class TestCase:
             if type(y) is float:
                 y = int(((tex_details.height >> sub.mip) - 1) * y)
 
+            if cast == rd.CompType.Typeless:
+                cast = tex_details.format.compType
             if cast == rd.CompType.Typeless and tex_details.creationFlags & rd.TextureCategory.SwapBuffer:
                 cast = rd.CompType.UNormSRGB
 
             # Reduce epsilon for RGBA8 textures if it's not already reduced
             if tex_details.format.compByteWidth == 1 and eps == util.FLT_EPSILON:
                 eps = (1.0 / 255.0)
-            if tex_details.format.compByteWidth == 2 and eps == util.FLT_EPSILON:
+            elif tex_details.format.compByteWidth == 2 and eps == util.FLT_EPSILON:
                 eps = (1.0 / 16384.0)
+            # Also for the default Android framebuffer format
+            elif tex_details.format.type == 12 and eps == util.FLT_EPSILON:
+                eps = (1.0 / 1024.0)
 
         picked: rd.PixelValue = self.controller.PickPixel(tex, x, y, sub, cast)
 
@@ -507,6 +512,29 @@ class TestCase:
             name = res_details.name
 
         log.success("Picked value at {},{} in {} is as expected".format(x, y, name))
+
+    def screen_crop_coords(self, out = None):
+        pipe: rd.PipeState = self.controller.GetPipelineState()
+        vp: rd.Viewport = pipe.GetViewport(0)
+
+        # if no output is specified, check the current colour output at this action
+        if out is None:
+            out = pipe.GetOutputTargets()[0].resourceId
+
+        # If the image buffer is larger than the viewport, crop it such that the new coordinates
+        # map to the bottom-left of the image (i.e. OpenGL origin)
+        tex_details = self.get_texture(out)
+        if (tex_details.width <= vp.width) or (tex_details.height <= vp.height):
+            return (0.0, 0.0, float(tex_details.width), float(tex_details.height))
+
+        t_width = float(min(tex_details.width, vp.width))
+        t_height = float(min(tex_details.height, vp.height))
+
+        y = 0.0
+        if tex_details.height > vp.height:
+            y = tex_details.height - vp.height
+
+        return (0.0, y, t_width, t_height)
 
     def check_triangle(self, out = None, back = None, fore = None, vp = None):
         pipe: rd.PipeState = self.controller.GetPipelineState()

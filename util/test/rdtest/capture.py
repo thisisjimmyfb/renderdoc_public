@@ -16,7 +16,7 @@ class TargetControl():
         :param ident: The ident to connect to.
         :param host: The hostname.
         :param username: The username to use when connecting.
-        :param force: Whether to force the connection.
+        :param force: Whether to force the connction.
         :param timeout: The timeout in seconds before aborting the run.
         :param exit_kill: Whether to kill the process when the control loop ends.
         """
@@ -86,12 +86,13 @@ class TargetControl():
                 continue
 
             # If we got a graceful or non-graceful shutdown, break out of the loop
-            if (msg.type == rd.TargetControlMessageType.Disconnected or
-                    not self.control.Connected()):
+            if msg.type == rd.TargetControlMessageType.Disconnected:
+                log.print('Server disconnected')
                 break
 
             # If we got a new capture, add it to our list
             if msg.type == rd.TargetControlMessageType.NewCapture:
+                log.print('Got a new capture!')
                 self._captures.append(msg.newCapture)
                 continue
 
@@ -107,7 +108,7 @@ class TargetControl():
         # If we should make sure the application is killed when we exit, do that now
         if self._exit_kill:
             # Try 5 times to kill the application. This may fail if the application exited already
-            for attempt in range(5):
+            for _ in range(5):
                 try:
                     os.kill(self._pid, signal.SIGTERM)
                     time.sleep(1)
@@ -204,6 +205,7 @@ def run_and_capture(exe: str, cmdline: str, frame: int, *, frame_count=1, captur
     # Run until we have all expected captures (probably just 1). If the program
     # exits or times out we will also stop, of course
     control.run(keep_running=lambda x: len(x.captures()) < captures_expected)
+    sleep(3)
 
     captures = control.captures()
     log.print(f'Retrieved {len(captures)}')

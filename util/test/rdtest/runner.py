@@ -45,7 +45,7 @@ def _enqueue_output(process: subprocess.Popen, out, q: queue.Queue):
         pass
 
 
-def _run_test(testclass, runner_timeout, failedcases: list):
+def _run_test(testclass, failedcases: list):
     name = testclass.__name__
 
     # Fork the interpreter to run the test, in case it crashes we can catch it.
@@ -88,7 +88,7 @@ def _run_test(testclass, runner_timeout, failedcases: list):
             print("Checking runner output...")
 
         try:
-            out = test_stdout.get(timeout=runner_timeout)
+            out = test_stdout.get(timeout=util.get_runner_timeout())
             while not test_stdout.empty():
                 out += test_stdout.get_nowait()
 
@@ -144,10 +144,10 @@ def _run_test(testclass, runner_timeout, failedcases: list):
                 break
 
         if out is None and err is None and test_run.poll() is None:
-            log.error('Timed out, no output within {}s elapsed'.format(runner_timeout))
+            log.error('Timed out, no output within {}s elapsed'.format(util.get_runner_timeout()))
             test_run.kill()
             test_run.communicate()
-            raise subprocess.TimeoutExpired(' '.join(args), runner_timeout)
+            raise subprocess.TimeoutExpired(' '.join(args), util.get_runner_timeout())
 
     if RUNNER_DEBUG:
         print("Test runner has finished")
@@ -189,7 +189,7 @@ def fetch_tests():
     return { x[0]: (x[1] == 'True', x[2]) for x in split_tests }
 
 
-def run_tests(test_include: str, test_exclude: str, in_process: bool, slow_tests: bool, debugger: bool, test_timeout: int):
+def run_tests(test_include: str, test_exclude: str, in_process: bool, slow_tests: bool, debugger: bool):
     start_time = datetime.datetime.now(datetime.timezone.utc)
 
     rd.InitialiseReplay(rd.GlobalEnvironment(), [])
@@ -351,7 +351,7 @@ def run_tests(test_include: str, test_exclude: str, in_process: bool, slow_tests
             if in_process:
                 instance.invoketest(debugMode)
             else:
-                _run_test(testclass, test_timeout, failedcases)
+                _run_test(testclass, failedcases)
 
         if debugger:
             do(True)

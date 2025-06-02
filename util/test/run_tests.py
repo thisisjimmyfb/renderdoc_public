@@ -19,14 +19,14 @@ parser.add_argument('--in-process',
                     help="Run test code in the same process as test runner", action="store_true")
 parser.add_argument('--slow-tests',
                     help="Run potentially slow tests", action="store_true")
-parser.add_argument('--test-timeout',
-                    help="Timeout for output from tests", default=90, type=int)
 parser.add_argument('--data', default=os.path.join(script_dir, "data"),
                     help="The folder that reference data is in. Will not be modified.", type=str)
 parser.add_argument('--demos-binary', default="",
                     help="The path to the built demos binary.", type=str)
 parser.add_argument('--demos-timeout', default=None,
                     help="The timeout to use when expecting the demos to run.", type=int)
+parser.add_argument('--runner-timeout', default=600,
+                    help="The timeout to use when expecting output from the test runner", type=int)
 parser.add_argument('--data-extra', default=os.path.join(script_dir, "data_extra"),
                     help="The folder that extra reference data is in (typically very large captures that aren't part "
                          "of the normal repo). Will not be modified.", type=str)
@@ -99,6 +99,7 @@ demos_binary = args.demos_binary
 if demos_binary != "":
     demos_binary = os.path.realpath(demos_binary)
 demos_timeout = args.demos_timeout
+runner_timeout = args.runner_timeout
 demo_fork = ''
 if args.fork:
     demo_fork = ' --fork '
@@ -141,6 +142,7 @@ rdtest.set_temp_dir(temp_path)
 rdtest.set_demos_binary(demos_binary)
 rdtest.set_demos_timeout(demos_timeout)
 rdtest.set_demos_fork(demo_fork)
+rdtest.set_runner_timeout(runner_timeout)
 rdtest.set_shell(args.shell)
 
 if args.renderdoccmd:
@@ -163,4 +165,4 @@ elif args.internal_remote_server:
 elif args.internal_run_test is not None:
     rdtest.internal_run_test(args.internal_run_test)
 else:
-    rdtest.run_tests(args.test_include, args.test_exclude, args.in_process, args.slow_tests, args.debugger, args.test_timeout)
+    rdtest.run_tests(args.test_include, args.test_exclude, args.in_process, args.slow_tests, args.debugger)

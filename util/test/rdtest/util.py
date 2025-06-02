@@ -128,6 +128,11 @@ def set_demos_fork(fork_arg: str):
     global _demos_fork
     _demos_fork = fork_arg
 
+def set_runner_timeout(timeout: int):
+    global _runner_timeout
+    _runner_timeout = timeout
+
+
 def set_current_test(name: str):
     global _test_name
     _test_name = name
