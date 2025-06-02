@@ -112,7 +112,9 @@ set(VULKAN_SRC
         vk/vk_descriptor_reuse.cpp
         vk/vk_descriptor_variable_count.cpp
         vk/vk_discard_rects.cpp
-        vk/vk_discard_zoo.cpp
+        vk/vk_discard_zoo_base.cpp
+        vk/vk_discard_zoo_1.cpp
+        vk/vk_discard_zoo_2.cpp
         vk/vk_draw_zoo.cpp
         vk/vk_dynamic_rendering.cpp
         vk/vk_empty_capture.cpp

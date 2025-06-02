@@ -3,10 +3,7 @@ import struct
 import renderdoc as rd
 
 
-class VK_Discard_Zoo(rdtest.Discard_Zoo):
-    demos_test_name = 'VK_Discard_Zoo'
-    internal = False
-
+class VK_Discard_Zoo_Base(rdtest.Discard_Zoo):
     def __init__(self):
         rdtest.Discard_Zoo.__init__(self)
 
@@ -150,3 +147,12 @@ class VK_Discard_Zoo(rdtest.Discard_Zoo):
         self.check_pixel_value(tex_id, 0.5, 0.5, [0.0, 1.0, 0.0, 1.0])
 
         rdtest.log.success("Output value from draw is correct at draw and after it")
+
+
+class VK_Discard_Zoo_1(VK_Discard_Zoo_Base):
+    demos_test_name = 'VK_Discard_Zoo_1'
+    internal = False
+
+class VK_Discard_Zoo_2(VK_Discard_Zoo_Base):
+    demos_test_name = 'VK_Discard_Zoo_2'
+    internal = False

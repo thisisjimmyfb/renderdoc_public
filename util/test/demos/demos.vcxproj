@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Development|Win32">
@@ -311,7 +311,9 @@
     <ClCompile Include="vk\vk_dedicated_allocation.cpp" />
     <ClCompile Include="vk\vk_descriptor_reuse.cpp" />
     <ClCompile Include="vk\vk_descriptor_variable_count.cpp" />
-    <ClCompile Include="vk\vk_discard_zoo.cpp" />
+    <ClCompile Include="vk\vk_discard_zoo_1.cpp" />
+    <ClCompile Include="vk\vk_discard_zoo_2.cpp" />
+    <ClCompile Include="vk\vk_discard_zoo_base.cpp" />
     <ClCompile Include="vk\vk_dynamic_rendering.cpp" />
     <ClCompile Include="vk\vk_empty_capture.cpp" />
     <ClCompile Include="vk\vk_extended_dyn_state.cpp" />

@@ -101,6 +101,12 @@ class Discard_Zoo(rdtest.TestCase):
                         for (x, y) in [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (1, 1), (2, 2), (3, 3),
                                        (4, 4), (w - 1, h - 1), (w - 2, h - 2), (w - 1, 0), (w - 1, 1), (w - 1, 2),
                                        (0, h - 1), (1, h - 1), (2, h - 1), (3, h - 2)]:
+                            # overflow can happen with 1D textures or tiny mips
+                            if x >= w:
+                                x = w-1
+                            if y >= h:
+                                y = h-1
+
                             # underflow can happen with 1D textures or tiny mips
                             if x < 0:
                                 x = 0
