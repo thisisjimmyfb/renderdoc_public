@@ -20,16 +20,18 @@ class GL_Callstacks(rdtest.TestCase):
         return ret
 
     def check_capture(self):
+        capture_filename = self.retrieve_capture()
+
         # Need capture access. Rather than trying to keep the original around, we just open a new one
         cap = rd.OpenCaptureFile()
 
         # Open a particular file
-        result = cap.OpenFile(self.capture_filename, '', None)
+        result = cap.OpenFile(capture_filename, '', None)
 
         # Make sure the file opened successfully
         if result != rd.ResultCode.Succeeded:
             cap.Shutdown()
-            raise rdtest.TestFailureException("Couldn't open capture for access: {}".format(self.capture_filename, str(result)))
+            raise rdtest.TestFailureException("Couldn't open capture for access: {}".format(capture_filename, str(result)))
 
         if not cap.HasCallstacks():
             raise rdtest.TestFailureException("Capture does not report having callstacks")
