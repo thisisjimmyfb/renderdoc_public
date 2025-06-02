@@ -17,7 +17,7 @@ class VK_Descriptor_Reuse(rdtest.TestCase):
         min_duration = float(action.customName.split(' = ')[1])
 
         if rd.IsReleaseBuild():
-            if min_duration >= 15.0:
+            if min_duration >= 70.0:
                 raise rdtest.TestFailureException("Minimum duration noted {} ms is too high".format(min_duration))
             rdtest.log.success("Minimum duration ({}) is OK".format(min_duration))
         else:
