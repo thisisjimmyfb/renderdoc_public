@@ -32,6 +32,8 @@ AndroidWindow::AndroidWindow(int width, int height, const char *title) : Graphic
 {
   window = android_state->window;
   TEST_LOG("android window %p", window);
+
+  ANativeWindow_setBuffersGeometry(window, width, height, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
 }
 
 AndroidWindow::~AndroidWindow()
