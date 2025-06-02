@@ -4,6 +4,7 @@ import renderdoc as rd
 
 class VK_Synchronization_2(rdtest.TestCase):
     demos_test_name = 'VK_Synchronization_2'
+    demos_frame_cap = 10
 
     def get_capture_options(self):
         opts = rd.CaptureOptions()
