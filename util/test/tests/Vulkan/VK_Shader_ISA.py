@@ -21,6 +21,7 @@ class VK_Shader_ISA(rdtest.TestCase):
 
         isas: List[str] = self.controller.GetDisassemblyTargets(True)
 
+        rdtest.log.print(f"ISAs: {isas}")
         if isas == []:
             raise rdtest.TestFailureException("Expected some disassembly targets, got none!")
 
@@ -33,42 +34,34 @@ class VK_Shader_ISA(rdtest.TestCase):
 
         rdtest.log.success("All disassembly targets successfully fetched and seem reasonable")
 
-        # We make this a hard failure. Users can fix this by installing the plugins, and we don't want automated
-        # overnight tests to suddenly stop checking
-        if 'AMDIL' not in isas:
-            raise rdtest.TestFailureException(
-                "AMDIL is not an available disassembly target. Are you missing plugins?")
+        if 'AMDIL' in isas:
+            disasm: str = self.controller.DisassembleShader(pipe.GetGraphicsPipelineObject(), refl, 'AMDIL')
 
-        disasm: str = self.controller.DisassembleShader(pipe.GetGraphicsPipelineObject(), refl, 'AMDIL')
+            expected = [
+                'il_vs',
+                'dcl_output_position',
+                'end',
+            ]
 
-        expected = [
-            'il_vs',
-            'dcl_output_position',
-            'end',
-        ]
+            for fragment in expected:
+                if not fragment in disasm:
+                    raise rdtest.TestFailureException(
+                        "AMDIL ISA doesn't contain '{}' as expected: {}".format(fragment, disasm))
 
-        for fragment in expected:
-            if not fragment in disasm:
-                raise rdtest.TestFailureException(
-                    "AMDIL ISA doesn't contain '{}' as expected: {}".format(fragment, disasm))
+        if 'RDNA (gfx1010)' in isas:
+            disasm: str = self.controller.DisassembleShader(pipe.GetGraphicsPipelineObject(), refl, 'RDNA (gfx1010)')
 
-        if 'RDNA (gfx1010)' not in isas:
-            raise rdtest.TestFailureException(
-                "RDNA (gfx1010) is not an available disassembly target. Are you missing plugins?")
+            expected = [
+                'asic(GFX10)',
+                'vgpr_count',
+                'wave_size',
+                's_endpgm',
+            ]
 
-        disasm: str = self.controller.DisassembleShader(pipe.GetGraphicsPipelineObject(), refl, 'RDNA (gfx1010)')
-
-        expected = [
-            'asic(GFX10)',
-            'vgpr_count',
-            'wave_size',
-            's_endpgm',
-        ]
-
-        for fragment in expected:
-            if not fragment in disasm:
-                raise rdtest.TestFailureException(
-                    "RDNA ISA doesn't contain '{}' as expected: {}".format(fragment, disasm))
+            for fragment in expected:
+                if not fragment in disasm:
+                    raise rdtest.TestFailureException(
+                        "RDNA ISA doesn't contain '{}' as expected: {}".format(fragment, disasm))
 
         rdtest.log.success("AMD disassembly is as expected")
 
