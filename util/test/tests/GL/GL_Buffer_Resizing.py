@@ -46,7 +46,8 @@ class GL_Buffer_Resizing(rdtest.TestCase):
 
             self.controller.SetFrameEvent(action.eventId, True)
 
-            self.check_triangle(out=action.outputs[0])
+            self.check_triangle(out=action.outputs[0],
+                                vp=self.screen_crop_coords(action.outputs[0]))
 
             postvs_data = self.get_postvs(action, rd.MeshDataStage.VSOut, 0, action.numIndices)
 
