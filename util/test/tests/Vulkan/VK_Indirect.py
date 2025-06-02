@@ -10,7 +10,7 @@ def real_action_children(action):
 class VK_Indirect(rdtest.TestCase):
     demos_test_name = 'VK_Indirect'
 
-    def check_overlay(self, pass_samples, *, no_overlay = False):
+    def check_overlay(self, pass_samples, x_coord, y_coord, *, no_overlay = False):
         pipe: rd.PipeState = self.controller.GetPipelineState()
 
         tex = rd.TextureDisplay()
@@ -80,11 +80,11 @@ class VK_Indirect(rdtest.TestCase):
             off_alpha = 0.0
             self.check(len(pass_samples) == 0)
         for s in [s for s in samples if s not in pass_samples]:
-            self.check_pixel_value(overlay_id, s[0], s[1], [0.0, 0.0, 0.0, off_alpha], eps=1.0/256.0)
+            self.check_pixel_value(overlay_id, x_coord(s[0]), y_coord(s[1]), [0.0, 0.0, 0.0, off_alpha], eps=1.0/256.0)
 
         # And the passing samples should be on
         for s in pass_samples:
-            self.check_pixel_value(overlay_id, s[0], s[1], [0.8, 0.1, 0.8, 1.0], eps=1.0/256.0)
+            self.check_pixel_value(overlay_id, x_coord(s[0]), y_coord(s[1]), [0.8, 0.1, 0.8, 1.0], eps=1.0/256.0)
 
     def check_capture(self):
         fill = self.find_action("vkCmdFillBuffer")
@@ -111,22 +111,26 @@ class VK_Indirect(rdtest.TestCase):
 
             self.controller.SetFrameEvent(final.eventId, False)
 
+            coords = self.screen_crop_coords(tex)
+            x_coord = lambda x: int((float(x)/400.0)*coords[2]+coords[0])
+            y_coord = lambda y: int((float(y)/300.0)*coords[3]+coords[1])
+
             # Check the top row, non indirect count and always present
-            self.check_pixel_value(tex, 60, 60, [1.0, 0.0, 0.0, 1.0])
-            self.check_pixel_value(tex, 100, 60, [0.0, 0.0, 1.0, 1.0])
-            self.check_pixel_value(tex, 145, 35, [1.0, 1.0, 0.0, 1.0])
-            self.check_pixel_value(tex, 205, 35, [0.0, 1.0, 1.0, 1.0])
+            self.check_pixel_value(tex, x_coord(60), y_coord(60), [1.0, 0.0, 0.0, 1.0])
+            self.check_pixel_value(tex, x_coord(100), y_coord(60), [0.0, 0.0, 1.0, 1.0])
+            self.check_pixel_value(tex, x_coord(145), y_coord(35), [1.0, 1.0, 0.0, 1.0])
+            self.check_pixel_value(tex, x_coord(205), y_coord(35), [0.0, 1.0, 1.0, 1.0])
 
             # if present, check bottom row of indirect count as well as post-count calls
             if indirect_count_root is not None:
-                self.check_pixel_value(tex, 60, 220, [0.0, 1.0, 0.0, 1.0])
-                self.check_pixel_value(tex, 100, 220, [1.0, 0.0, 1.0, 1.0])
-                self.check_pixel_value(tex, 145, 185, [0.5, 1.0, 0.0, 1.0])
-                self.check_pixel_value(tex, 205, 185, [0.5, 0.0, 1.0, 1.0])
+                self.check_pixel_value(tex, x_coord(60), y_coord(220), [0.0, 1.0, 0.0, 1.0])
+                self.check_pixel_value(tex, x_coord(100), y_coord(220), [1.0, 0.0, 1.0, 1.0])
+                self.check_pixel_value(tex, x_coord(145), y_coord(185), [0.5, 1.0, 0.0, 1.0])
+                self.check_pixel_value(tex, x_coord(205), y_coord(185), [0.5, 0.0, 1.0, 1.0])
 
-                self.check_pixel_value(tex, 340, 40, [1.0, 0.5, 0.0, 1.0])
-                self.check_pixel_value(tex, 340, 115, [1.0, 0.5, 0.5, 1.0])
-                self.check_pixel_value(tex, 340, 190, [1.0, 0.0, 0.5, 1.0])
+                self.check_pixel_value(tex, x_coord(340), y_coord(40), [1.0, 0.5, 0.0, 1.0])
+                self.check_pixel_value(tex, x_coord(340), y_coord(115), [1.0, 0.5, 0.5, 1.0])
+                self.check_pixel_value(tex, x_coord(340), y_coord(190), [1.0, 0.0, 0.5, 1.0])
 
             dispatches = self.find_action("{}: Dispatches".format(level))
 
@@ -194,7 +198,7 @@ class VK_Indirect(rdtest.TestCase):
                 self.check(len(postvs_data) == 0)
 
                 # No samples should be passing in the empties
-                self.check_overlay([])
+                self.check_overlay([], x_coord, y_coord)
 
             rdtest.log.success("{} empty actions are empty".format(level))
 
@@ -227,7 +231,7 @@ class VK_Indirect(rdtest.TestCase):
             self.check_mesh_data(postvs_ref, postvs_data)
             self.check(len(postvs_data) == len(postvs_ref))  # We shouldn't have any extra vertices
 
-            self.check_overlay([(60, 40)])
+            self.check_overlay([(60, 40)], x_coord, y_coord)
 
             rdtest.log.success("{} {} is as expected".format(level, action.customName))
 
@@ -254,7 +258,7 @@ class VK_Indirect(rdtest.TestCase):
             self.check_mesh_data(postvs_ref, postvs_data)
             self.check(len(postvs_data) == len(postvs_ref))  # We shouldn't have any extra vertices
 
-            self.check_overlay([(100, 40)])
+            self.check_overlay([(100, 40)], x_coord, y_coord)
 
             rdtest.log.success("{} {} is as expected".format(level, action.customName))
 
@@ -281,7 +285,7 @@ class VK_Indirect(rdtest.TestCase):
             self.check_mesh_data(postvs_ref, postvs_data)
             self.check(len(postvs_data) == len(postvs_ref))  # We shouldn't have any extra vertices
 
-            self.check_overlay([(140, 40), (200, 40)])
+            self.check_overlay([(140, 40), (200, 40)], x_coord, y_coord)
 
             rdtest.log.success("{} {} is as expected".format(level, action.customName))
 
@@ -304,7 +308,7 @@ class VK_Indirect(rdtest.TestCase):
                     postvs_data = self.get_postvs(action, rd.MeshDataStage.VSOut, 0, 1)
                     self.check(len(postvs_data) == 0)
 
-                    self.check_overlay([], no_overlay=True)
+                    self.check_overlay([], x_coord, y_coord, no_overlay=True)
 
                 # vkCmdDrawIndirectCountKHR
                 action_indirect = indirect_count_root.children[1].children[0]
@@ -335,7 +339,7 @@ class VK_Indirect(rdtest.TestCase):
                 self.check_mesh_data(postvs_ref, postvs_data)
                 self.check(len(postvs_data) == len(postvs_ref))  # We shouldn't have any extra vertices
 
-                self.check_overlay([(60, 190)])
+                self.check_overlay([(60, 190)], x_coord, y_coord)
 
                 rdtest.log.success("{} {} is as expected".format(level, action.customName))
 
@@ -365,7 +369,7 @@ class VK_Indirect(rdtest.TestCase):
                 self.check_mesh_data(postvs_ref, postvs_data)
                 self.check(len(postvs_data) == len(postvs_ref))  # We shouldn't have any extra vertices
 
-                self.check_overlay([(100, 190)])
+                self.check_overlay([(100, 190)], x_coord, y_coord)
 
                 rdtest.log.success("{} {} is as expected".format(level, action.customName))
 
@@ -380,7 +384,7 @@ class VK_Indirect(rdtest.TestCase):
 
                 self.check(len(postvs_data) == 0)
 
-                self.check_overlay([])
+                self.check_overlay([], x_coord, y_coord)
 
                 rdtest.log.success("{} {} is as expected".format(level, action.customName))
 
@@ -409,16 +413,16 @@ class VK_Indirect(rdtest.TestCase):
                 self.check_mesh_data(postvs_ref, postvs_data)
                 self.check(len(postvs_data) == len(postvs_ref))  # We shouldn't have any extra vertices
 
-                self.check_overlay([(140, 190), (200, 190)])
+                self.check_overlay([(140, 190), (200, 190)], x_coord, y_coord)
 
                 rdtest.log.success("{} {} is as expected".format(level, action.customName))
 
                 # Now check that the draws post-count are correctly highlighted
                 self.controller.SetFrameEvent(self.find_action("{}: Post-count 1".format(level)).children[0].eventId, False)
-                self.check_overlay([(340, 40)])
+                self.check_overlay([(340, 40)], x_coord, y_coord)
                 self.controller.SetFrameEvent(self.find_action("{}: Post-count 2".format(level)).children[0].eventId, False)
-                self.check_overlay([(340, 190)])
+                self.check_overlay([(340, 190)], x_coord, y_coord)
                 self.controller.SetFrameEvent(self.find_action("{}: Post-count 3".format(level)).children[0].eventId, False)
-                self.check_overlay([(340, 115)])
+                self.check_overlay([(340, 115)], x_coord, y_coord)
             else:
                 rdtest.log.print("KHR_action_indirect_count not tested")
