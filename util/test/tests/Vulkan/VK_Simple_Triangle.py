@@ -53,6 +53,10 @@ class VK_Simple_Triangle(rdtest.TestCase):
         save_data.destType = rd.FileType.DDS
         path = rdtest.get_tmp_path('temp.dds')
 
+        # GetTextureData causes a segfault on the LLVMPipe version that runs on our glibc AMI.  The
+        # later version running on our musl AMI works fine
+        driverName = rd.GetDriverInformation(rd.GraphicsAPI.Vulkan).version
+
         # Check that nothing breaks if we call typical enumeration functions on resources
         for res in self.controller.GetResources():
             res: rd.ResourceDescription
@@ -62,5 +66,6 @@ class VK_Simple_Triangle(rdtest.TestCase):
             self.controller.GetShaderEntryPoints(res.resourceId)
             self.controller.GetUsage(res.resourceId)
             self.controller.GetBufferData(res.resourceId, 0, 0)
-            self.controller.GetTextureData(res.resourceId, rd.Subresource())
+            if not driverName.startswith('llvmpipe (LLVM 12'):
+                self.controller.GetTextureData(res.resourceId, rd.Subresource())
             self.controller.SaveTexture(save_data, path)
