@@ -44,9 +44,9 @@ class VK_Resource_Lifetimes(rdtest.TestCase):
             self.check_pixel_value(tex, xoffs+46, 86, [1.0, 0.545, 0.36, 1.0])
 
             # Check the empty space where we clamped and didn't repeat
-            self.check_pixel_value(tex, xoffs+82, 79, [0.72, 1.0, 1.0, 1.0])
-            self.check_pixel_value(tex, xoffs+84, 86, [0.72, 1.0, 1.0, 1.0])
-            self.check_pixel_value(tex, xoffs+88, 92, [0.72, 1.0, 1.0, 1.0])
+            self.check_pixel_value(tex, xoffs+82, 79, [0.725, 1.0, 1.0, 1.0])
+            self.check_pixel_value(tex, xoffs+84, 86, [0.725, 1.0, 1.0, 1.0])
+            self.check_pixel_value(tex, xoffs+88, 92, [0.725, 1.0, 1.0, 1.0])
 
             # Check that the repeated smiley above is there
             self.check_pixel_value(tex, xoffs+67, 53, [0.905, 0.635, 0.36, 1.0])
