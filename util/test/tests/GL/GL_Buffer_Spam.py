@@ -18,4 +18,8 @@ class GL_Buffer_Spam(rdtest.TestCase):
 
         pipe: rd.PipeState = self.controller.GetPipelineState()
 
-        self.check_pixel_value(pipe.GetOutputTargets()[0].resource, 0.5, 0.5, [0.0, 1.0, 0.0, 1.0])
+        vp = self.screen_crop_coords()
+        self.check_pixel_value(pipe.GetOutputTargets()[0].resource,
+                               int(0.5*vp[2]+vp[0]),
+                               int(0.5*vp[3]+vp[1]),
+                               [0.0, 1.0, 0.0, 1.0])
