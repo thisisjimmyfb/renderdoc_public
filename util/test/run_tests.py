@@ -36,6 +36,16 @@ parser.add_argument('--temp', default=os.path.join(script_dir, "tmp"),
                     help="The folder to put temporary run data in. Will be completely cleared.", type=str)
 parser.add_argument('--debugger',
                     help="Enable debugger mode, exceptions are not caught by the framework.", action="store_true")
+parser.add_argument('--adb-device', required=False,
+                    help="Use the specified ADB device to run the tests.", type=str)
+parser.add_argument('--remote-host', required=False,
+                    help="Use the specified remote device to run the tests.", type=str)
+parser.add_argument('--port', required=False, default="22",
+                    help="Port to use for ssh/scp to remote host", type=str)
+parser.add_argument('--shell', required=False, default='bash', type=str, help='Shell to use for SSH commands, defaults to Bash')
+parser.add_argument('--renderdoccmd', required=False, default=os.path.join(script_dir, '..', '..', '..', 'build-host'),
+                    help="Renderdoccmd executable location", type=str)
+parser.add_argument('--fork', required=False, action='store_true', help='Runs the test under a fork within the test app (Linux only)')
 # Internal command, when we fork out to run a test in a separate process
 parser.add_argument('--internal_run_test', help=argparse.SUPPRESS, type=str, required=False)
 # Internal command, when we re-run as admin to register vulkan layer
@@ -89,6 +99,9 @@ demos_binary = args.demos_binary
 if demos_binary != "":
     demos_binary = os.path.realpath(demos_binary)
 demos_timeout = args.demos_timeout
+demo_fork = ''
+if args.fork:
+    demo_fork = ' --fork '
 
 os.chdir(sys.path[0])
 
@@ -127,7 +140,18 @@ rdtest.set_data_extra_dir(data_extra_path)
 rdtest.set_temp_dir(temp_path)
 rdtest.set_demos_binary(demos_binary)
 rdtest.set_demos_timeout(demos_timeout)
+rdtest.set_demos_fork(demo_fork)
+rdtest.set_shell(args.shell)
 
+if args.renderdoccmd:
+    rdtest.set_renderdoccmd_dir(args.renderdoccmd)
+
+if args.adb_device:
+    rdtest.create_adb_device(args.adb_device)
+elif args.remote_host:
+    rdtest.create_remote_device(args.remote_host, args.port)
+else:
+    rdtest.set_remote_server(None)
 # debugger option implies in-process test running
 if args.debugger:
     args.in_process = True

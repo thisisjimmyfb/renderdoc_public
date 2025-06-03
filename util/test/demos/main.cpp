@@ -161,6 +161,8 @@ void NuklearShutdown()
 
 #elif defined(__linux__)
 
+#include <sys/wait.h>
+
 #define NK_XLIB_IMPLEMENTATION
 #include "3rdparty/nuklear/nuklear_xlib.h"
 
@@ -386,6 +388,36 @@ LONG exceptionHandler(_EXCEPTION_POINTERS *ExceptionInfo)
 }
 #endif
 
+#if defined(__linux__) && !defined(ANDROID)
+#define FORKABLE
+#endif
+
+int run_tests(int argc, char **argv, const std::string &testchoice, std::vector<TestMetadata> &tests)
+{
+  for(const TestMetadata &test : tests)
+  {
+    if(testchoice == test.Name)
+    {
+      TEST_LOG("Running '%s'", test.Name);
+      test.test->Prepare(argc, argv);
+      test.test->SetName(test.Name);
+
+      if(!test.IsAvailable())
+      {
+        TEST_ERROR("%s is not available: %s", test.Name, test.test->Avail.c_str());
+        return 5;
+      }
+
+      int ret = test.test->main();
+      test.test->Shutdown();
+      return ret;
+    }
+  }
+
+  TEST_ERROR("%s is not a known test", argv[1]);
+  return 2;
+}
+
 int main(int argc, char **argv)
 {
   std::vector<TestMetadata> &tests = test_list();
@@ -395,7 +427,7 @@ int main(int argc, char **argv)
   if(argc >= 2 && (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h") || !strcmp(argv[1], "-?") ||
                    !strcmp(argv[1], "/help") || !strcmp(argv[1], "/h") || !strcmp(argv[1], "/?")))
   {
-    printf(R"(RenderDoc testing demo program
+    DebugPrint(R"(RenderDoc testing demo program
 
 Usage: %s Test_Name [test_options]
 
@@ -416,10 +448,10 @@ Usage: %s Test_Name [test_options]
                                 By default in the path in $RENDERDOC_DEMOS_DATA
                                 environment variable, or else in the data/demos
                                 folder next to the executable.
+  --fork                        Execute the test in a fork() and execve() enironment (Linux only)
 )",
-           argc == 0 ? "demos" : argv[0]);
+               argc == 0 ? "demos" : argv[0]);
 
-    fflush(stdout);
     return 1;
   }
 
@@ -434,41 +466,43 @@ Usage: %s Test_Name [test_options]
       if(test.API != prev)
       {
         if(prev != TestAPI::Count)
-          printf("\n\n");
-        printf("======== %s tests ========\n\n", APIName(test.API));
+          DebugPrint("\n\n");
+        DebugPrint("======== %s tests ========\n\n", APIName(test.API));
       }
 
       prev = test.API;
 
-      printf("%s: %s", test.Name, test.IsAvailable() ? "Available" : "Unavailable");
+      DebugPrint("%s: %s", test.Name, test.IsAvailable() ? "Available" : "Unavailable");
 
       if(!test.IsAvailable())
-        printf(" because %s", test.AvailMessage());
+        DebugPrint(" because %s", test.AvailMessage());
 
-      printf("\n\t%s\n\n", test.Description);
+      DebugPrint("\n\t%s\n\n", test.Description);
     }
 
-    fflush(stdout);
     return 1;
   }
 
   if(argc >= 2 && !strcmp(argv[1], "--list-raw"))
   {
-    SetDebugLogEnabled(false);
-
     check_tests(argc, argv);
 
     // output TSV
-    printf("Name\tAvailable\tAvailMessage\n");
+    DebugPrint("Name\tAvailable\tAvailMessage\n");
 
     for(const TestMetadata &test : tests)
     {
-      printf("%s\t%s\t%s\n", test.Name, test.IsAvailable() ? "True" : "False",
-             test.IsAvailable() ? "Available" : test.AvailMessage());
+      DebugPrint("%s\t%s\t%s\n", test.Name, test.IsAvailable() ? "True" : "False",
+                 test.IsAvailable() ? "Available" : test.AvailMessage());
     }
 
-    fflush(stdout);
     return 1;
+  }
+
+  bool to_fork = false;
+  if(argc >= 2 && !strcmp(argv[1], "--fork"))
+  {
+    to_fork = true;
   }
 
   if(tests.empty())
@@ -485,7 +519,7 @@ Usage: %s Test_Name [test_options]
   {
     for(const TestMetadata &test : tests)
     {
-      if(!strcmp(test.Name, argv[1]))
+      if(!strcmp(test.Name, argv[to_fork ? 2 : 1]))
       {
         validTestArg = true;
         break;
@@ -510,7 +544,7 @@ Usage: %s Test_Name [test_options]
   }
   else if(validTestArg)
   {
-    testchoice = argv[1];
+    testchoice = argv[to_fork ? 2 : 1];
   }
   else
   {
@@ -676,29 +710,41 @@ Usage: %s Test_Name [test_options]
   SetUnhandledExceptionFilter(&exceptionHandler);
 #endif
 
-  for(const TestMetadata &test : tests)
+#ifdef FORKABLE
+  int pid = 0;
+  if(to_fork)
   {
-    if(testchoice == test.Name)
+    TEST_LOG("Forking...");
+    pid = fork();
+    if(pid < 0)
     {
-      TEST_LOG("Running '%s'", test.Name);
-      test.test->Prepare(argc, argv);
-      test.test->SetName(test.Name);
+      TEST_ERROR("Failed to fork: %s", strerror(errno));
+      return errno;
+    }
 
-      if(!test.IsAvailable())
-      {
-        TEST_ERROR("%s is not available: %s", test.Name, test.test->Avail.c_str());
-        return 5;
-      }
+    if(pid == 0)
+    {
+      char *const args[] = {argv[0], argv[2], NULL};
+      TEST_LOG("Exec %s %s", argv[0], argv[2]);
+      execv(args[0], args);
 
-      int ret = test.test->main();
-      test.test->Shutdown();
-      return ret;
+      TEST_ERROR("Failed to exec %s", strerror(errno));
+      return 1;
     }
   }
 
-  TEST_ERROR("%s is not a known test", argv[1]);
+  if(pid == 0)
+    return run_tests(argc, argv, testchoice, tests);
 
-  return 2;
+  if(pid > 0)
+  {
+    int status;
+    waitpid(pid, &status, 0);
+  }
+  return 0;
+#else
+  return run_tests(argc, argv, testchoice, tests);
+#endif
 }
 
 #if defined(WIN32)
@@ -745,7 +791,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _In_
 struct android_app *android_state;
 pthread_t cmdthread_handle = 0;
 
-#define ANDROID_LOG(...) __android_log_print(ANDROID_LOG_INFO, "rd_demos", __VA_ARGS__);
+#define ANDROID_LOG(...) __android_log_print(ANDROID_LOG_DEBUG, "rd_demos", __VA_ARGS__);
 
 std::vector<std::string> getArgs()
 {
